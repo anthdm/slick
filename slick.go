@@ -2,6 +2,8 @@ package slick
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
 	"log/slog"
 	"net/http"
 
@@ -9,21 +11,63 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
-func defaultErrorHandler(err error, c *Context) error {
-	slog.Error("error", "err", err)
-	return nil
-}
+type Plug func(Handler) Handler
+
+type Handler func(c *Context) error
 
 type ErrorHandler func(error, *Context) error
 
 type Context struct {
-	response http.ResponseWriter
-	request  *http.Request
+	Response http.ResponseWriter
+	Request  *http.Request
 	ctx      context.Context
+	params   httprouter.Params
+}
+
+func newContext(w http.ResponseWriter, r *http.Request, params httprouter.Params) *Context {
+	return &Context{
+		Response: w,
+		Request:  r,
+		ctx:      context.Background(),
+		params:   params,
+	}
+}
+
+func (c *Context) Param(name string) string {
+	return c.params.ByName(name)
+}
+
+func (c *Context) Query(name string) string {
+	return c.Request.URL.Query().Get(name)
+}
+
+func (c *Context) FormValue(name string) string {
+	return c.Request.FormValue(name)
 }
 
 func (c *Context) Render(component templ.Component) error {
-	return component.Render(c.ctx, c.response)
+	return component.Render(c.ctx, c.Response)
+}
+
+func (c *Context) Redirect(url string, code int) error {
+	if code < http.StatusMultipleChoices || code > http.StatusTemporaryRedirect {
+		return errors.New("invalid redirect code")
+	}
+	http.Redirect(c.Response, c.Request, url, code)
+	return nil
+}
+
+func (c *Context) JSON(status int, v any) error {
+	c.Response.Header().Set("Content-Type", "application/json")
+	c.Response.WriteHeader(status)
+	return json.NewDecoder(c.Request.Body).Decode(&v)
+}
+
+func (c *Context) Text(status int, t string) error {
+	c.Response.Header().Set("Content-Type", "application/plain")
+	c.Response.WriteHeader(status)
+	_, err := c.Response.Write([]byte(t))
+	return err
 }
 
 func (c *Context) Set(key string, value any) {
@@ -34,14 +78,10 @@ func (c *Context) Get(key string) any {
 	return c.ctx.Value(key)
 }
 
-type Plug func(Handler) Handler
-
-type Handler func(c *Context) error
-
 type Slick struct {
 	ErrorHandler ErrorHandler
 	router       *httprouter.Router
-	middlewares  []Plug
+	plugs        []Plug
 }
 
 func New() *Slick {
@@ -51,31 +91,63 @@ func New() *Slick {
 	}
 }
 
+func (s *Slick) HandleMethodNotAllowed(h http.Handler) {
+	s.router.MethodNotAllowed = h
+}
+
 func (s *Slick) Plug(plugs ...Plug) {
-	s.middlewares = append(s.middlewares, plugs...)
+	s.plugs = append(s.plugs, plugs...)
 }
 
 func (s *Slick) Start(port string) error {
 	return http.ListenAndServe(port, s.router)
 }
 
-func (s *Slick) Get(path string, h Handler, plugs ...Handler) {
-	s.router.GET(path, s.makeHTTPRouterHandle(h))
+func (s *Slick) add(method, path string, h Handler, plugs ...Plug) {
+	s.router.Handle(method, path, s.makeHTTPRouterHandle(h, plugs...))
 }
 
-func (s *Slick) makeHTTPRouterHandle(h Handler) httprouter.Handle {
+func (s *Slick) Get(path string, h Handler, plugs ...Plug) {
+	s.add("GET", path, h, plugs...)
+}
+
+func (s *Slick) Post(path string, h Handler, plugs ...Plug) {
+	s.add("POST", path, h, plugs...)
+}
+
+func (s *Slick) Put(path string, h Handler, plugs ...Plug) {
+	s.add("PUT", path, h, plugs...)
+}
+
+func (s *Slick) Delete(path string, h Handler, plugs ...Plug) {
+	s.add("DELETE", path, h, plugs...)
+}
+
+func (s *Slick) Head(path string, h Handler, plugs ...Plug) {
+	s.add("HEAD", path, h, plugs...)
+}
+
+func (s *Slick) Options(path string, h Handler, plugs ...Plug) {
+	s.add("OPTIONS", path, h, plugs...)
+}
+
+func (s *Slick) makeHTTPRouterHandle(h Handler, plugs ...Plug) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
-		ctx := &Context{
-			response: w,
-			request:  r,
-			ctx:      context.Background(),
+		ctx := newContext(w, r, params)
+		for i := len(plugs) - 1; i >= 0; i-- {
+			h = plugs[i](h)
 		}
-		for i := len(s.middlewares) - 1; i >= 0; i-- {
-			h = s.middlewares[i](h)
+		for i := len(s.plugs) - 1; i >= 0; i-- {
+			h = s.plugs[i](h)
 		}
 		if err := h(ctx); err != nil {
 			// todo: handle the error from the error handler huh?
 			s.ErrorHandler(err, ctx)
 		}
 	}
+}
+
+func defaultErrorHandler(err error, c *Context) error {
+	slog.Error("error", "err", err)
+	return nil
 }
