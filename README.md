@@ -12,7 +12,7 @@ For now you will need to install templ manually (working on making this work wit
 
 Install the Slick cli
 ```
-go install "github.com/anthdm/slick"
+go install "github.com/anthdm/slick/slick@latest"
 ```
 
 Create new slick project
