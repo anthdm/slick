@@ -64,7 +64,7 @@ func (c *Context) JSON(status int, v any) error {
 }
 
 func (c *Context) Text(status int, t string) error {
-	c.Response.Header().Set("Content-Type", "application/plain")
+	c.Response.Header().Set("Content-Type", "text/plain")
 	c.Response.WriteHeader(status)
 	_, err := c.Response.Write([]byte(t))
 	return err
