@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log/slog"
 	"net/http"
 
@@ -100,6 +101,7 @@ func (s *Slick) Plug(plugs ...Plug) {
 }
 
 func (s *Slick) Start(port string) error {
+	fmt.Println("slick app running on port ", port)
 	return http.ListenAndServe(port, s.router)
 }
 
