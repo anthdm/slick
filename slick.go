@@ -92,8 +92,17 @@ func New() *Slick {
 	}
 }
 
-func (s *Slick) HandleMethodNotAllowed(h http.Handler) {
-	s.router.MethodNotAllowed = h
+type methodNotAllowedHandler struct {
+	handler Handler
+}
+
+func (h methodNotAllowedHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	ctx := newContext(w, r, httprouter.Params{})
+	h.handler(ctx)
+}
+
+func (s *Slick) MethodNotAllowed(h Handler) {
+	s.router.MethodNotAllowed = methodNotAllowedHandler{h}
 }
 
 func (s *Slick) Plug(plugs ...Plug) {
