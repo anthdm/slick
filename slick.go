@@ -101,7 +101,7 @@ func (s *Slick) Plug(plugs ...Plug) {
 }
 
 func (s *Slick) Start(port string) error {
-	fmt.Println("slick app running on port ", port)
+	fmt.Printf("slick app running http://localhost:%s\n", port)
 	return http.ListenAndServe(port, s.router)
 }
 

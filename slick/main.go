@@ -47,7 +47,7 @@ func generateProject(name string) error {
 	if err := os.Mkdir(name, os.ModePerm); err != nil {
 		return err
 	}
-	folders := []string{"model", "handler", "view", "cmd"}
+	folders := []string{"model", "handler", "view", "cmd", "public"}
 
 	for _, folder := range folders {
 		if err := os.Mkdir(name+"/"+folder, os.ModePerm); err != nil {
@@ -56,6 +56,9 @@ func generateProject(name string) error {
 	}
 
 	if err := os.WriteFile(name+"/go.mod", writeGoModContents(name), os.ModePerm); err != nil {
+		return err
+	}
+	if err := os.WriteFile(name+"/public/app.css", []byte(""), os.ModePerm); err != nil {
 		return err
 	}
 	if err := os.WriteFile(name+"/cmd/main.go", writeMainContents(name), os.ModePerm); err != nil {
@@ -78,9 +81,6 @@ func generateProject(name string) error {
 	if err := os.WriteFile(name+"/view/hello/hello.templ", writeViewContent(name), os.ModePerm); err != nil {
 		return err
 	}
-	// if err := os.WriteFile(name+"/view/hello.templ", []byte(cmdEntryContent), os.ModePerm); err != nil {
-	// 	return err
-	// }
 
 	return nil
 }
@@ -174,6 +174,8 @@ templ Base() {
 		<meta charset="utf-8"/>
 		<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 		<title>Slick Application</title>
+
+		<script src="https://unpkg.com/htmx.org@1.9.9" defer></script>
 	</head>
 	<body>
 		{ children... }
