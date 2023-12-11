@@ -95,7 +95,7 @@ func generateProject(name string) error {
 func installProject() error {
 	start := time.Now()
 	fmt.Println("installing project...")
-	if err := exec.Command("go", "get", "github.com/anthdm/slick").Run(); err != nil {
+	if err := exec.Command("go", "get", "github.com/anthdm/slick@latest").Run(); err != nil {
 		return err
 	}
 	if err := exec.Command("go", "get", "github.com/a-h/templ").Run(); err != nil {
