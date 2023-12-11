@@ -6,6 +6,7 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+	"time"
 	"unicode"
 	"unicode/utf8"
 )
@@ -50,6 +51,16 @@ func parseMultipartFormData[T any](c *Context) (T, error) {
 				case reflect.Int:
 					intResult, _ := strconv.Atoi(fieldValue)
 					field.SetInt(int64(intResult))
+				case reflect.Struct:
+					if field.Type().PkgPath() == "time" && field.Type().Name() == "Time" {
+						// Assume the fieldValue is in a specific layout, e.g., "2006-01-02"
+						timeResult, err := time.Parse("2006-01-02", fieldValue)
+						if err != nil {
+							// Handle error
+						} else {
+							field.Set(reflect.ValueOf(timeResult))
+						}
+					}
 				}
 			}
 		}
