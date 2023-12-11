@@ -6,7 +6,7 @@ Build web applications faster with all batteries included
 # I really want to try this out even though its not finished yet.
 Spoiler: you will encounter rough edges.
 
-For now you will need to install templ and air manually (working on making this work with `slick install`
+For now you will need to install templ and air manually (working on making this work with `slick install`)
 
 - [https://github.com/a-h/templ/](https://github.com/a-h/templ/)
 - [https://github.com/cosmtrek/air](https://github.com/cosmtrek/air)

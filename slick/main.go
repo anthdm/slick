@@ -69,6 +69,9 @@ func generateProject(name string) error {
 	if err := os.WriteFile(name+"/.env", writeEnvFileContents(), os.ModePerm); err != nil {
 		return err
 	}
+	if err := os.WriteFile(name+"/.gitignore", writeGitignore(), os.ModePerm); err != nil {
+		return err
+	}
 	if err := os.WriteFile(name+"/public/app.css", []byte(""), os.ModePerm); err != nil {
 		return err
 	}
@@ -134,7 +137,7 @@ import (
 func main() {
 	app := slick.New()
 	app.Get("/", handler.HandleHelloIndex)
-	app.Start()
+	log.Fatal(app.Start())
 }
 `, mod)
 	return []byte(c)
@@ -153,14 +156,14 @@ func writeAirTomlContents() []byte {
 	c := `
 root = "."
 testdata_dir = "testdata"
-tmp_dir = "tmp"
+tmp_dir = ".build"
 
 [build]
   args_bin = []
-  bin = "./tmp/main"
-  cmd = "templ generate && go build -o ./tmp/main ./cmd"
+  bin = "./.build/main"
+  cmd = "templ generate && go build -o ./.build/main ./cmd"
   delay = 1000
-  exclude_dir = ["assets", "tmp", "vendor", "testdata"]
+  exclude_dir = ["assets", ".build", "vendor", "testdata"]
   exclude_file = []
   exclude_regex = ["_test.go", "_templ.go"]
   exclude_unchanged = false
@@ -234,6 +237,15 @@ func HandleHelloIndex(c *slick.Context) error {
 }
 `, mod)
 
+	return []byte(c)
+}
+
+func writeGitignore() []byte {
+	c := `
+bin
+.build
+.env
+`
 	return []byte(c)
 }
 
