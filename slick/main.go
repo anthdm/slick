@@ -51,6 +51,7 @@ func generateProject(name string) error {
 	if err := os.Mkdir(name, os.ModePerm); err != nil {
 		return err
 	}
+
 	folders := []string{"model", "handler", "view", "cmd", "public"}
 
 	for _, folder := range folders {

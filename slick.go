@@ -10,6 +10,7 @@ import (
 	"os"
 
 	"github.com/a-h/templ"
+	"github.com/joho/godotenv"
 	"github.com/julienschmidt/httprouter"
 )
 
@@ -111,6 +112,9 @@ func (s *Slick) Plug(plugs ...Plug) {
 }
 
 func (s *Slick) Start() error {
+	if err := godotenv.Load(); err != nil {
+		return err
+	}
 	var port string
 	port = os.Getenv("SLICK_HTTP_LISTEN_ADDR")
 	if len(port) == 0 {

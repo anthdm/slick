@@ -33,8 +33,8 @@ func ParseRequestBody[T any](c *Context) (T, error) {
 func parseMultipartFormData[T any](c *Context) (T, error) {
 	var (
 		result T
-		v      = reflect.ValueOf(&result).Elem() // Get the reflect.Value of result
-		t      = v.Type()                        // Get the reflect.Type of result
+		v      = reflect.ValueOf(&result).Elem()
+		t      = v.Type()
 	)
 	if err := c.Request.ParseForm(); err != nil {
 		return result, err
