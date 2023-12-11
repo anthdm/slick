@@ -132,7 +132,7 @@ import (
 func main() {
 	app := slick.New()
 	app.Get("/", handler.HandleHelloIndex)
-	app.Start(":3000")
+	app.Start()
 }
 `, mod)
 	return []byte(c)
