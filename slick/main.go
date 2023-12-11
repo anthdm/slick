@@ -26,6 +26,10 @@ func main() {
 			fmt.Println("not in slick app root: cmd/main.go not found")
 			os.Exit(1)
 		}
+		if err := exec.Command("templ", "generate").Run(); err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
 		exec.Command("go", "run", "cmd/main.go").Run()
 	case "install":
 		if err := installProject(); err != nil {
@@ -47,6 +51,7 @@ func generateProject(name string) error {
 	if err := os.Mkdir(name, os.ModePerm); err != nil {
 		return err
 	}
+
 	folders := []string{"model", "handler", "view", "cmd", "public"}
 
 	for _, folder := range folders {
@@ -57,8 +62,11 @@ func generateProject(name string) error {
 
 	if err := os.WriteFile(name+"/go.mod", writeGoModContents(name), os.ModePerm); err != nil {
 		return err
-	}
+  }
 	if err := os.WriteFile(name+"/.air.toml", writeAirTomlContents(), os.ModePerm); err != nil {
+    return err
+  }
+	if err := os.WriteFile(name+"/.env", writeEnvFileContents(), os.ModePerm); err != nil {
 		return err
 	}
 	if err := os.WriteFile(name+"/public/app.css", []byte(""), os.ModePerm); err != nil {
@@ -70,7 +78,6 @@ func generateProject(name string) error {
 	if err := os.WriteFile(name+"/handler/hello.go", writeHandlerContent(name), os.ModePerm); err != nil {
 		return err
 	}
-
 	if err := os.Mkdir(name+"/view/hello", os.ModePerm); err != nil {
 		return err
 	}
@@ -80,7 +87,6 @@ func generateProject(name string) error {
 	if err := os.WriteFile(name+"/view/layout/base.templ", writeBaseLayoutContent(), os.ModePerm); err != nil {
 		return err
 	}
-
 	if err := os.WriteFile(name+"/view/hello/hello.templ", writeViewContent(name), os.ModePerm); err != nil {
 		return err
 	}
@@ -91,7 +97,7 @@ func generateProject(name string) error {
 func installProject() error {
 	start := time.Now()
 	fmt.Println("installing project...")
-	if err := exec.Command("go", "get", "github.com/anthdm/slick").Run(); err != nil {
+	if err := exec.Command("go", "get", "github.com/anthdm/slick@latest").Run(); err != nil {
 		return err
 	}
 	if err := exec.Command("go", "get", "github.com/a-h/templ").Run(); err != nil {
@@ -102,6 +108,18 @@ func installProject() error {
 	}
 	fmt.Printf("done installing project in %v\n", time.Since(start))
 	return nil
+}
+
+func writeEnvFileContents() []byte {
+	return []byte(`
+SLICK_HTTP_LISTEN_ADDR=:3000
+
+SLICK_SQL_DB_NAME=
+SLICK_SQL_DB_USER=
+SLICK_SQL_DB_PASSWORD=
+SLICK_SQL_DB_HOST=
+SLICK_SQL_DB_PORT=
+`)
 }
 
 func writeMainContents(mod string) []byte {
@@ -116,7 +134,7 @@ import (
 func main() {
 	app := slick.New()
 	app.Get("/", handler.HandleHelloIndex)
-	app.Start(":3000")
+	app.Start()
 }
 `, mod)
 	return []byte(c)

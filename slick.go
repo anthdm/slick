@@ -7,8 +7,10 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"os"
 
 	"github.com/a-h/templ"
+	"github.com/joho/godotenv"
 	"github.com/julienschmidt/httprouter"
 )
 
@@ -109,7 +111,15 @@ func (s *Slick) Plug(plugs ...Plug) {
 	s.plugs = append(s.plugs, plugs...)
 }
 
-func (s *Slick) Start(port string) error {
+func (s *Slick) Start() error {
+	if err := godotenv.Load(); err != nil {
+		return err
+	}
+	var port string
+	port = os.Getenv("SLICK_HTTP_LISTEN_ADDR")
+	if len(port) == 0 {
+		port = ":3000"
+	}
 	fmt.Printf("slick app running http://localhost:%s\n", port)
 	return http.ListenAndServe(port, s.router)
 }
