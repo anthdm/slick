@@ -58,6 +58,9 @@ func generateProject(name string) error {
 	if err := os.WriteFile(name+"/go.mod", writeGoModContents(name), os.ModePerm); err != nil {
 		return err
 	}
+	if err := os.WriteFile(name+"/.air.toml", writeAirTomlContents(), os.ModePerm); err != nil {
+		return err
+	}
 	if err := os.WriteFile(name+"/public/app.css", []byte(""), os.ModePerm); err != nil {
 		return err
 	}
@@ -126,6 +129,59 @@ func writeGoModContents(mod string) []byte {
 	buf.WriteString("\n")
 	buf.WriteString("go 1.21.0")
 	return []byte(buf.String())
+}
+
+func writeAirTomlContents() []byte {
+	c := `
+root = "."
+testdata_dir = "testdata"
+tmp_dir = "tmp"
+
+[build]
+  args_bin = []
+  bin = "./tmp/main"
+  cmd = "templ generate && go build -o ./tmp/main ./cmd"
+  delay = 1000
+  exclude_dir = ["assets", "tmp", "vendor", "testdata"]
+  exclude_file = []
+  exclude_regex = ["_test.go", "_templ.go"]
+  exclude_unchanged = false
+  follow_symlink = false
+  full_bin = ""
+  include_dir = []
+  include_ext = ["go", "tpl", "tmpl", "html", "templ"]
+  include_file = []
+  kill_delay = "0s"
+  log = "build-errors.log"
+  poll = false
+  poll_interval = 0
+  post_cmd = []
+  pre_cmd = []
+  rerun = false
+  rerun_delay = 500
+  send_interrupt = false
+  stop_on_error = false
+
+[color]
+  app = ""
+  build = "yellow"
+  main = "magenta"
+  runner = "green"
+  watcher = "cyan"
+
+[log]
+  main_only = false
+  time = false
+
+[misc]
+  clean_on_exit = false
+
+[screen]
+  clear_on_rebuild = false
+  keep_scroll = true
+
+`
+	return []byte(c)
 }
 
 func writeViewContent(mod string) []byte {
