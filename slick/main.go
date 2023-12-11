@@ -26,6 +26,10 @@ func main() {
 			fmt.Println("not in slick app root: cmd/main.go not found")
 			os.Exit(1)
 		}
+		if err := exec.Command("templ", "generate").Run(); err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
 		exec.Command("go", "run", "cmd/main.go").Run()
 	case "install":
 		if err := installProject(); err != nil {
@@ -56,6 +60,9 @@ func generateProject(name string) error {
 	}
 
 	if err := os.WriteFile(name+"/go.mod", writeGoModContents(name), os.ModePerm); err != nil {
+		return err
+	}
+	if err := os.WriteFile(name+"/.env", writeEnvFileContents(), os.ModePerm); err != nil {
 		return err
 	}
 	if err := os.WriteFile(name+"/public/app.css", []byte(""), os.ModePerm); err != nil {
@@ -99,6 +106,18 @@ func installProject() error {
 	}
 	fmt.Printf("done installing project in %v\n", time.Since(start))
 	return nil
+}
+
+func writeEnvFileContents() []byte {
+	return []byte(`
+SLICK_HTTP_LISTEN_ADDR=:3000
+
+SLICK_SQL_DB_NAME=
+SLICK_SQL_DB_USER=
+SLICK_SQL_DB_PASSWORD=
+SLICK_SQL_DB_HOST=
+SLICK_SQL_DB_PORT=
+`)
 }
 
 func writeMainContents(mod string) []byte {
