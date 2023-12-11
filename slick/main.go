@@ -62,10 +62,10 @@ func generateProject(name string) error {
 
 	if err := os.WriteFile(name+"/go.mod", writeGoModContents(name), os.ModePerm); err != nil {
 		return err
-  }
+	}
 	if err := os.WriteFile(name+"/.air.toml", writeAirTomlContents(), os.ModePerm); err != nil {
-    return err
-  }
+		return err
+	}
 	if err := os.WriteFile(name+"/.env", writeEnvFileContents(), os.ModePerm); err != nil {
 		return err
 	}
