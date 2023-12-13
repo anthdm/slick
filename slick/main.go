@@ -13,37 +13,77 @@ func usage() {
 	os.Exit(0)
 }
 
+type commandOptions struct {
+	verbose bool // Currently always false, but could be set by a flag in the future.
+}
+
+func runCommand(opts commandOptions, name string, args ...string) error {
+	cmd := exec.Command(name, args...)
+
+	if opts.verbose {
+		cmd.Stdout = os.Stdout
+	}
+
+	cmd.Stderr = os.Stderr // We always want to see errors.
+
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("%s: %w", cmd.String(), err)
+	}
+
+	return nil
+}
+
 func main() {
 	args := os.Args
 	if len(args) < 2 {
 		usage()
+		return
 	}
-	cmd := os.Args[1]
 
+	cmd := args[1]
+	cmdOpts := commandOptions{}
+
+	var err error
 	switch cmd {
 	case "run":
-		if _, err := os.Stat("cmd/main.go"); err != nil {
-			fmt.Println("not in slick app root: cmd/main.go not found")
-			os.Exit(1)
-		}
-		if err := exec.Command("templ", "generate").Run(); err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
-		exec.Command("go", "run", "cmd/main.go").Run()
+		err = runProject(cmdOpts)
 	case "install":
-		if err := installProject(); err != nil {
-			fmt.Println(err)
-		}
+		err = installProject(cmdOpts)
 	case "new":
-		if len(os.Args) != 3 {
+		if len(args) != 3 {
 			usage()
+			return
 		}
-		name := os.Args[2]
-		if err := generateProject(name); err != nil {
-			fmt.Println(err)
-		}
+
+		name := args[2]
+		err = generateProject(name)
+	default:
+		usage()
+		err = fmt.Errorf("unknown command: %s", cmd)
 	}
+
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+}
+
+func runProject(cmdOpts commandOptions) error {
+	if _, err := os.Stat("cmd/main.go"); err != nil {
+		return fmt.Errorf("not in slick app root: cmd/main.go not found")
+	}
+	if err := runCommand(cmdOpts, "templ", "generate"); err != nil {
+		return err
+	}
+
+	// We make an exception for the run command, since we want to see the output.
+	cmdOpts.verbose = true
+
+	if err := runCommand(cmdOpts, "go", "run", "cmd/main.go"); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func generateProject(name string) error {
@@ -97,18 +137,20 @@ func generateProject(name string) error {
 	return nil
 }
 
-func installProject() error {
+func installProject(cmdOpts commandOptions) error {
 	start := time.Now()
 	fmt.Println("installing project...")
-	if err := exec.Command("go", "get", "github.com/anthdm/slick@latest").Run(); err != nil {
+
+	if err := runCommand(cmdOpts, "go", "get", "github.com/anthdm/slick@latest"); err != nil {
 		return err
 	}
-	if err := exec.Command("go", "get", "github.com/a-h/templ").Run(); err != nil {
+	if err := runCommand(cmdOpts, "go", "get", "github.com/a-h/templ"); err != nil {
 		return err
 	}
-	if err := exec.Command("templ", "generate").Run(); err != nil {
+	if err := runCommand(cmdOpts, "templ", "generate"); err != nil {
 		return err
 	}
+
 	fmt.Printf("done installing project in %v\n", time.Since(start))
 	return nil
 }
