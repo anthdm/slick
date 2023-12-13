@@ -18,7 +18,7 @@ go install "github.com/anthdm/slick/slick@latest"
 
 Create new slick project
 ```
-slick new myapp
+slick new project myapp
 ```
 
 Install the project
