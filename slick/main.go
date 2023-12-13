@@ -9,7 +9,12 @@ import (
 )
 
 func usage() {
-	fmt.Println("help....")
+	fmt.Println("Usage:")
+	fmt.Println("  slick run       - Run the Slick app")
+	fmt.Println("  slick install   - Install the Slick project")
+	fmt.Println("  slick new <option> <name> - Create a new <option>")
+	fmt.Println("  - Options: project, handler, model, view")
+
 	os.Exit(0)
 }
 
@@ -36,14 +41,54 @@ func main() {
 			fmt.Println(err)
 		}
 	case "new":
-		if len(os.Args) != 3 {
+
+		if len(os.Args) < 4 {
 			usage()
 		}
-		name := os.Args[2]
-		if err := generateProject(name); err != nil {
+
+		// handle new command
+		if err := handleNewCommand(os.Args[2:]); err != nil {
 			fmt.Println(err)
 		}
 	}
+}
+
+func handleNewCommand(args []string) error {
+	option := args[0]
+	name := args[1]
+
+	_, isSlickProject := os.Stat("cmd/main.go")
+
+	if option != "project" && isSlickProject != nil {
+		fmt.Println("not in slick project root: cmd/main.go not found")
+		os.Exit(1)
+	}
+
+	switch option {
+
+	case "project":
+		if err := generateProject(name); err != nil {
+			return err
+		}
+
+	case "handler":
+		// TODO: check if name is a folder and if it contains a .go extension
+		if err := os.WriteFile("./handler/"+name+".go", writeHandlerContent(name), os.ModePerm); err != nil {
+			return err
+		}
+
+	case "model":
+		// INFO: this is not yet implemented
+
+	case "view":
+		// TODO: check if name is a folder and if it contains a .go extension
+		if err := os.WriteFile("./view/"+name+".templ", writeViewContent(name), os.ModePerm); err != nil {
+			return err
+		}
+
+	}
+
+	return nil
 }
 
 func generateProject(name string) error {
