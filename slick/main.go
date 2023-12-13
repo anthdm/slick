@@ -126,11 +126,13 @@ SLICK_SQL_DB_PORT=
 }
 
 func writeMainContents(mod string) []byte {
-	c := fmt.Sprintf(`
-package main
+	c := fmt.Sprintf(`package main
 
 import (
+	"log"
+
 	"github.com/anthdm/slick"
+
 	"%s/handler"
 )
 
