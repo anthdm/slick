@@ -77,7 +77,8 @@ func runProject(cmdOpts commandOptions) error {
 	}
 
 	// We make an exception for the run command, since we want to see the output.
-	cmdOpts = commandOptions{verbose: true}
+	cmdOpts.verbose = true
+
 	if err := runCommand(cmdOpts, "go", "run", "cmd/main.go"); err != nil {
 		return err
 	}
