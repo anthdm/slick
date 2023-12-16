@@ -17,9 +17,7 @@ func NewCommand() *cli {
 }
 
 func (c *cli) Register(cmds ...commandFunc) {
-	for _, cmd := range cmds {
-		c.cmds = append(c.cmds, cmd)
-	}
+	c.cmds = append(c.cmds, cmds...)
 }
 
 func (c *cli) Execute() {

@@ -6,6 +6,8 @@ import (
 	"os/exec"
 	"strings"
 	"time"
+
+	"github.com/spf13/cobra"
 )
 
 func usage() {
@@ -14,103 +16,121 @@ func usage() {
 }
 
 func main() {
-	args := os.Args
-	if len(args) < 2 {
-		usage()
-	}
-	cmd := os.Args[1]
+	command := NewCommand()
+	command.Register(
+		runProject,
+		installProject,
+		generateProject,
+	)
 
-	switch cmd {
-	case "run":
-		if _, err := os.Stat("cmd/main.go"); err != nil {
-			fmt.Println("not in slick app root: cmd/main.go not found")
-			os.Exit(1)
-		}
-		if err := exec.Command("templ", "generate").Run(); err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
-		exec.Command("go", "run", "cmd/main.go").Run()
-	case "install":
-		if err := installProject(); err != nil {
-			fmt.Println(err)
-		}
-	case "new":
-		if len(os.Args) != 3 {
-			usage()
-		}
-		name := os.Args[2]
-		if err := generateProject(name); err != nil {
-			fmt.Println(err)
-		}
+	command.Execute()
+}
+
+func runProject() *cobra.Command {
+	return &cobra.Command{
+		Use:     "run",
+		Example: "slick run",
+		Short:   "Run slick development server",
+		Run: func(cmd *cobra.Command, args []string) {
+			if _, err := os.Stat("cmd/main.go"); err != nil {
+				fmt.Println("not in slick app root: cmd/main.go not found")
+				os.Exit(1)
+			}
+			if err := exec.Command("templ", "generate").Run(); err != nil {
+				fmt.Println(err)
+				os.Exit(1)
+			}
+
+			if err := exec.Command("go", "run", "cmd/main.go").Run(); err != nil {
+				fmt.Println(err)
+			}
+		},
 	}
 }
 
-func generateProject(name string) error {
-	fmt.Println("creating new slick project:", name)
-	if err := os.Mkdir(name, os.ModePerm); err != nil {
-		return err
-	}
+func installProject() *cobra.Command {
+	return &cobra.Command{
+		Use:     "install",
+		Example: "slick install",
+		Short:   "Install project's dependency",
+		Run: func(cmd *cobra.Command, args []string) {
+			start := time.Now()
+			fmt.Println("installing project...")
+			if err := exec.Command("go", "get", "github.com/anthdm/slick@latest").Run(); err != nil {
+				fmt.Println(err)
+				return
+			}
 
-	folders := []string{"model", "handler", "view", "cmd", "public"}
+			if err := exec.Command("go", "get", "github.com/a-h/templ").Run(); err != nil {
+				fmt.Println(err)
+				return
+			}
+			if err := exec.Command("templ", "generate").Run(); err != nil {
+				fmt.Println(err)
+				return
+			}
 
-	for _, folder := range folders {
-		if err := os.Mkdir(name+"/"+folder, os.ModePerm); err != nil {
-			return err
-		}
+			fmt.Printf("done installing project in %v\n", time.Since(start))
+		},
 	}
-
-	if err := os.WriteFile(name+"/go.mod", writeGoModContents(name), os.ModePerm); err != nil {
-		return err
-	}
-	if err := os.WriteFile(name+"/.air.toml", writeAirTomlContents(), os.ModePerm); err != nil {
-		return err
-	}
-	if err := os.WriteFile(name+"/.env", writeEnvFileContents(), os.ModePerm); err != nil {
-		return err
-	}
-	if err := os.WriteFile(name+"/.gitignore", writeGitignore(), os.ModePerm); err != nil {
-		return err
-	}
-	if err := os.WriteFile(name+"/public/app.css", []byte(""), os.ModePerm); err != nil {
-		return err
-	}
-	if err := os.WriteFile(name+"/cmd/main.go", writeMainContents(name), os.ModePerm); err != nil {
-		return err
-	}
-	if err := os.WriteFile(name+"/handler/hello.go", writeHandlerContent(name), os.ModePerm); err != nil {
-		return err
-	}
-	if err := os.Mkdir(name+"/view/hello", os.ModePerm); err != nil {
-		return err
-	}
-	if err := os.Mkdir(name+"/view/layout", os.ModePerm); err != nil {
-		return err
-	}
-	if err := os.WriteFile(name+"/view/layout/base.templ", writeBaseLayoutContent(), os.ModePerm); err != nil {
-		return err
-	}
-	if err := os.WriteFile(name+"/view/hello/hello.templ", writeViewContent(name), os.ModePerm); err != nil {
-		return err
-	}
-
-	return nil
 }
 
-func installProject() error {
-	start := time.Now()
-	fmt.Println("installing project...")
-	if err := exec.Command("go", "get", "github.com/anthdm/slick@latest").Run(); err != nil {
-		return err
+func generateProject() *cobra.Command {
+	return &cobra.Command{
+		Use:     "new",
+		Example: "slick new hello-world",
+		Short:   "Create new slick project",
+		Run: func(cmd *cobra.Command, args []string) {
+			name := args[0]
+
+			fmt.Println("creating new slick project:", name)
+			if err := os.Mkdir(name, os.ModePerm); err != nil {
+				fmt.Println(err)
+			}
+
+			folders := []string{"model", "handler", "view", "cmd", "public"}
+
+			for _, folder := range folders {
+				if err := os.Mkdir(name+"/"+folder, os.ModePerm); err != nil {
+					fmt.Println(err)
+				}
+			}
+
+			if err := os.WriteFile(name+"/go.mod", writeGoModContents(name), os.ModePerm); err != nil {
+				fmt.Println(err)
+			}
+			if err := os.WriteFile(name+"/.air.toml", writeAirTomlContents(), os.ModePerm); err != nil {
+				fmt.Println(err)
+			}
+			if err := os.WriteFile(name+"/.env", writeEnvFileContents(), os.ModePerm); err != nil {
+				fmt.Println(err)
+			}
+			if err := os.WriteFile(name+"/.gitignore", writeGitignore(), os.ModePerm); err != nil {
+				fmt.Println(err)
+			}
+			if err := os.WriteFile(name+"/public/app.css", []byte(""), os.ModePerm); err != nil {
+				fmt.Println(err)
+			}
+			if err := os.WriteFile(name+"/cmd/main.go", writeMainContents(name), os.ModePerm); err != nil {
+				fmt.Println(err)
+			}
+			if err := os.WriteFile(name+"/handler/hello.go", writeHandlerContent(name), os.ModePerm); err != nil {
+				fmt.Println(err)
+			}
+			if err := os.Mkdir(name+"/view/hello", os.ModePerm); err != nil {
+				fmt.Println(err)
+			}
+			if err := os.Mkdir(name+"/view/layout", os.ModePerm); err != nil {
+				fmt.Println(err)
+			}
+			if err := os.WriteFile(name+"/view/layout/base.templ", writeBaseLayoutContent(), os.ModePerm); err != nil {
+				fmt.Println(err)
+			}
+			if err := os.WriteFile(name+"/view/hello/hello.templ", writeViewContent(name), os.ModePerm); err != nil {
+				fmt.Println(err)
+			}
+		},
 	}
-	if err := exec.Command("go", "get", "github.com/a-h/templ").Run(); err != nil {
-		return err
-	}
-	if err := exec.Command("templ", "generate").Run(); err != nil {
-		return err
-	}
-	fmt.Printf("done installing project in %v\n", time.Since(start))
-	return nil
 }
 
 func writeEnvFileContents() []byte {
