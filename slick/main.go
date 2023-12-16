@@ -49,6 +49,7 @@ func runProject() *cobra.Command {
 func installProject() *cobra.Command {
 	return &cobra.Command{
 		Use:     "install",
+		Aliases: []string{"i"},
 		Example: "slick install",
 		Short:   "Install project's dependency",
 		Run: func(cmd *cobra.Command, args []string) {
@@ -95,6 +96,7 @@ func generateProject() *cobra.Command {
 				}
 			}
 
+			// TODO: imrpove this error handling
 			if err := os.WriteFile(name+"/go.mod", writeGoModContents(name), os.ModePerm); err != nil {
 				fmt.Println(err)
 			}
