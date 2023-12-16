@@ -130,6 +130,7 @@ func writeMainContents(mod string) []byte {
 package main
 
 import (
+	"log"
 	"github.com/anthdm/slick"
 	"%s/handler"
 )
