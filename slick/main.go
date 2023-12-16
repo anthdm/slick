@@ -10,17 +10,15 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func usage() {
-	fmt.Println("help....")
-	os.Exit(0)
-}
-
 func main() {
 	command := NewCommand()
 	command.Register(
 		runProject,
 		installProject,
 		generateProject,
+		generateModel,
+		generateView,
+		generateHandler,
 	)
 
 	command.Execute()
@@ -34,11 +32,11 @@ func runProject() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			if _, err := os.Stat("cmd/main.go"); err != nil {
 				fmt.Println("not in slick app root: cmd/main.go not found")
-				os.Exit(1)
+				return
 			}
 			if err := exec.Command("templ", "generate").Run(); err != nil {
 				fmt.Println(err)
-				os.Exit(1)
+				return
 			}
 
 			if err := exec.Command("go", "run", "cmd/main.go").Run(); err != nil {
@@ -86,6 +84,7 @@ func generateProject() *cobra.Command {
 			fmt.Println("creating new slick project:", name)
 			if err := os.Mkdir(name, os.ModePerm); err != nil {
 				fmt.Println(err)
+				return
 			}
 
 			folders := []string{"model", "handler", "view", "cmd", "public"}
@@ -129,6 +128,41 @@ func generateProject() *cobra.Command {
 			if err := os.WriteFile(name+"/view/hello/hello.templ", writeViewContent(name), os.ModePerm); err != nil {
 				fmt.Println(err)
 			}
+		},
+	}
+}
+
+func generateModel() *cobra.Command {
+	return &cobra.Command{
+		Use:     "model",
+		Example: "slick model user",
+		Short:   "Generate new model",
+		Run: func(cmd *cobra.Command, args []string) {
+			// TODO:
+		},
+	}
+}
+
+func generateView() *cobra.Command {
+	return &cobra.Command{
+		Use:     "model",
+		Example: "slick model user",
+		Short:   "Generate new model",
+		Run: func(cmd *cobra.Command, args []string) {
+			// TODO:
+
+		},
+	}
+}
+
+func generateHandler() *cobra.Command {
+	return &cobra.Command{
+		Use:     "handler",
+		Example: "slick handler home",
+		Short:   "Generate new handler",
+		Run: func(cmd *cobra.Command, args []string) {
+			// TODO:
+
 		},
 	}
 }
