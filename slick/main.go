@@ -11,8 +11,8 @@ import (
 )
 
 func main() {
-	command := NewCommand()
-	command.Register(
+	cmd := NewCommand()
+	cmd.Register(
 		runProject,
 		installProject,
 		generateProject,
@@ -21,7 +21,7 @@ func main() {
 		generateHandler,
 	)
 
-	command.Execute()
+	cmd.Execute()
 }
 
 func runProject() *cobra.Command {
