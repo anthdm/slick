@@ -145,9 +145,9 @@ func generateModel() *cobra.Command {
 
 func generateView() *cobra.Command {
 	return &cobra.Command{
-		Use:     "model",
-		Example: "slick model user",
-		Short:   "Generate new model",
+		Use:     "view",
+		Example: "slick view user",
+		Short:   "Generate new view",
 		Run: func(cmd *cobra.Command, args []string) {
 			// TODO:
 
