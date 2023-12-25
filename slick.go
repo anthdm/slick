@@ -8,6 +8,7 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/a-h/templ"
 	"github.com/joho/godotenv"
@@ -115,13 +116,26 @@ func (s *Slick) Start() error {
 	if err := godotenv.Load(); err != nil {
 		return err
 	}
-	var port string
-	port = os.Getenv("SLICK_HTTP_LISTEN_ADDR")
-	if len(port) == 0 {
-		port = ":3000"
+
+	// Retrieve and sanitize listen address from env
+	listenAddr := os.Getenv("SLICK_HTTP_LISTEN_ADDR")
+	listenAddr = strings.TrimSpace(listenAddr)
+
+	// If listen address is not set, use default host and port
+	if listenAddr == "" {
+		listenAddr = ":3000"
 	}
-	fmt.Printf("slick app running http://localhost:%s\n", port)
-	return http.ListenAndServe(port, s.router)
+
+	// Print the URL where the app is running
+	browsableURL := listenAddr
+	if strings.HasPrefix(browsableURL, ":") {
+		browsableURL = "localhost" + browsableURL
+	}
+
+	fmt.Printf("slick app running at http://%s\n", browsableURL)
+
+	// Start the HTTP server
+	return http.ListenAndServe(listenAddr, s.router)
 }
 
 func (s *Slick) add(method, path string, h Handler, plugs ...Plug) {
