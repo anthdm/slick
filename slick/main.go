@@ -125,6 +125,125 @@ SLICK_SQL_DB_PORT=
 `)
 }
 
+func writeDBFileContents() []byte {
+	c := `
+package database
+
+import (
+	"database/sql"
+	"fmt"
+	"log"
+	"os"
+	"sync"
+)
+
+var (
+	conn *sql.DB
+	once sync.Once
+)
+
+type config struct {
+	Hostname string
+	Username string
+	Password string
+	Port     string
+	DBName   string
+}
+
+func (c *config) Connect() (*sql.DB, error) {
+	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s",
+		c.Username,
+		c.Password,
+		c.Hostname,
+		c.Port,
+		c.DBName,
+	)
+
+	log.Println("Creating database connection using DSN:", dsn)
+
+	conn, err := sql.Open("mysql", dsn)
+	if err != nil {
+		log.Println("Error opening database connection:", err)
+		return nil, err
+	}
+
+	log.Println("Pinging database to verify connection...")
+
+	err = conn.Ping()
+	if err != nil {
+		log.Println("Error pinging database:", err)
+		return nil, err
+	}
+
+	log.Println("Database connection established successfully.")
+
+	return conn, nil
+}
+
+func OpenConnection() {
+	log.Println("Attempting to open database connection...")
+
+	mysql := config{
+		Hostname: os.Getenv("SLICK_SQL_DB_HOST"),
+		Username: os.Getenv("SLICK_SQL_DB_USER"),
+		Password: os.Getenv("SLICK_SQL_DB_PASSWORD"),
+		Port:     os.Getenv("SLICK_SQL_DB_PORT"),
+		DBName:   os.Getenv("SLICK_SQL_DB_NAME"),
+	}
+
+	once.Do(func() {
+		log.Println("Creating database connection...")
+
+		db, err := mysql.Connect()
+		if err != nil {
+			log.Println("Error connecting to database:", err)
+			return
+		}
+
+		log.Println("Storing database connection...")
+		conn = db
+	})
+
+	log.Println("Database connection opened.")
+}
+
+func GetConnection() *sql.DB {
+	if conn == nil {
+		OpenConnection()
+	}
+
+	return conn
+}
+
+type Config struct {
+	DB *sql.DB
+}
+
+func NewConfig() *Config {
+	/**
+	 * Open connection
+	 */
+
+	log.Println("Attempting to retrieve database connection...")
+	db := GetConnection()
+	log.Printf("Database connection retrieved: %v\n", db)
+
+	if db == nil {
+		log.Println("ERROR: Database connection failed.")
+		return nil
+	}
+
+	config := Config{
+		DB: db,
+	}
+
+	return &config
+}
+
+`
+	return []byte(c)
+}
+
 func writeMainContents(mod string) []byte {
 	c := fmt.Sprintf(`
 package main
