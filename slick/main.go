@@ -109,6 +109,7 @@ func generateProject() *cobra.Command {
 			files := []File{
 				// setup directory
 				{Path: name + "/model", Content: nil},
+				{Path: name + "/database", Content: nil},
 				{Path: name + "/handler", Content: nil},
 				{Path: name + "/view", Content: nil},
 				{Path: name + "/cmd", Content: nil},
@@ -121,6 +122,7 @@ func generateProject() *cobra.Command {
 				{Path: name + "/.air.toml", Content: writeAirTomlContents()},
 				{Path: name + "/.env", Content: writeEnvFileContents()},
 				{Path: name + "/.gitignore", Content: writeGitignore()},
+				{Path: name + "/database/database.go", Content: writeDBFileContents()},
 				{Path: name + "/public/app.css", Content: []byte("")},
 				{Path: name + "/cmd/main.go", Content: writeMainContents(name)},
 				{Path: name + "/handler/hello.go", Content: writeHandlerContent(name)},
@@ -322,10 +324,14 @@ package main
 import (
 	"log"
 	"github.com/anthdm/slick"
+	"github.com/joho/godotenv"
 	"%s/handler"
 )
 
 func main() {
+	if err := godotenv.Load(".env"); err != nil {
+		log.Fatal("Error loading .env file")
+	}
 	app := slick.New()
 	app.Get("/", handler.HandleHelloIndex)
 	log.Fatal(app.Start())
